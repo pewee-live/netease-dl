@@ -16,41 +16,9 @@ tasks.withType(JavaCompile) {
 }
 repositories {
     //mavenLocal()
-    maven {
-        url 'http://192.168.7.111:8081/repository/opto-release/'
-		allowInsecureProtocol = true
-        credentials {
-            username 'admin'
-            password 'Zy123456'
-        }
-    }
-	maven {
-		url 'http://192.168.7.111:8081/repository/maven-central/'
-		allowInsecureProtocol = true
-		credentials {
-			username 'admin'
-			password 'Zy123456'
-		}
-	}
-	maven {
-		url 'http://192.168.7.111:8081/repository/maven-public/'
-		allowInsecureProtocol = true
-		credentials {
-			username 'admin'
-			password 'Zy123456'
-		}
-	}
-	maven {
-		url 'http://192.168.7.111:8081/repository/spring-milestone/'
-		allowInsecureProtocol = true
-		credentials {
-			username 'admin'
-			password 'Zy123456'
-		}
-	}
-    //maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
-    //maven { url 'https://repo.spring.io/milestone' }
-    //mavenCentral()
+    maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
+    maven { url 'https://repo.spring.io/milestone' }
+    mavenCentral()
 }
 
 dependencies {

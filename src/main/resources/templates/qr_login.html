@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>网易云音乐二维码登录</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h2 id="title">请使用网易云音乐APP扫码登录</h2>
+    <div id="title">项目地址:https://github.com/pewee-live/netease-dl</div>
+    
+    <input type="hidden" id="unikey-value" th:value="${unikey}">
+
+    <!-- 二维码图片，仅在未登录时显示 -->
+    <img id="qrImage" th:src="${qrImageBase64}" alt="二维码加载失败" />
+
+    <div id="status">正在检查登录状态...</div>
+
+    <script type="text/javascript">
+       const unikey = document.getElementById("unikey-value").value;
+        const statusDiv = document.getElementById("status");
+        const qrImg = document.getElementById("qrImage");
+        const title = document.getElementById("title");
+
+        function checkAlreadyLogin() {
+            axios.get('/login/status')
+                .then(response => {
+                    if (response.data.data === true) {
+                        window.location.href = "/home";
+                    } else {
+                        startQrPolling(); // 如果没登录，开始轮询二维码
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerText = "检查登录状态失败: " + error;
+                });
+        }
+
+        function startQrPolling() {
+            statusDiv.innerText = "请使用网易云音乐APP扫码登录";
+            let intervalId = setInterval(() => {
+                axios.get('/qr/status', {
+                    params: { unikey: unikey }
+                }).then(response => {
+                    if (response.data.data === true) {
+                        clearInterval(intervalId);
+                        statusDiv.innerText = "登录成功，正在跳转...";
+                        window.location.href = "/home";
+                    }
+                }).catch(error => {
+                    statusDiv.innerText = "扫码状态获取失败：" + error;
+                });
+            }, 2000);
+        }
+
+        // 页面加载时立即调用
+        checkAlreadyLogin();
+    </script>
+</body>
+</html>

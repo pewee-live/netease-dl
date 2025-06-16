@@ -1,0 +1,82 @@
+plugins {
+    id 'org.springframework.boot' version '2.4.1'
+    id 'io.spring.dependency-management' version '1.0.12.RELEASE'
+    id 'java'
+}
+
+group = 'com.pewee'
+version = '1.0.0'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked"
+    options.compilerArgs << "-Xlint:deprecation"
+}
+repositories {
+    //mavenLocal()
+    maven {
+        url 'http://192.168.7.111:8081/repository/opto-release/'
+		allowInsecureProtocol = true
+        credentials {
+            username 'admin'
+            password 'Zy123456'
+        }
+    }
+	maven {
+		url 'http://192.168.7.111:8081/repository/maven-central/'
+		allowInsecureProtocol = true
+		credentials {
+			username 'admin'
+			password 'Zy123456'
+		}
+	}
+	maven {
+		url 'http://192.168.7.111:8081/repository/maven-public/'
+		allowInsecureProtocol = true
+		credentials {
+			username 'admin'
+			password 'Zy123456'
+		}
+	}
+	maven {
+		url 'http://192.168.7.111:8081/repository/spring-milestone/'
+		allowInsecureProtocol = true
+		credentials {
+			username 'admin'
+			password 'Zy123456'
+		}
+	}
+    //maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
+    //maven { url 'https://repo.spring.io/milestone' }
+    //mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+	//implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation "com.google.guava:guava:$guavaVersion"
+    implementation "com.alibaba:fastjson:$fastjsonVersion"
+    implementation "joda-time:joda-time:$jodaVersion"
+    implementation "commons-fileupload:commons-fileupload:$fileuploadVersion"
+    implementation "org.apache.commons:commons-lang3:$commonsLangVersion"
+    implementation "log4j:log4j:$log4jVersion"
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation("org.apache.httpcomponents:httpclient:${httpclientVersion}")
+	implementation("org.apache.httpcomponents:httpmime:${httpmimeVersion}")
+	implementation("com.google.zxing:core:${zxingVersion}")
+	implementation("com.google.zxing:javase:${zxingVersion}")
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+wrapper {
+    gradleVersion = '7.3'
+}

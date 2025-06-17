@@ -21,7 +21,7 @@
 
 | 歌单下载页 | 专辑下载页 |
 |------------|-------------|
-| ![歌单下载页面](pics/1.jpg) | ![专辑下载页面](pics/2.jpg) |
+| ![歌单下载页面](https://raw.githubusercontent.com/pewee-live/netease-dl/refs/heads/master/pics/1.JPG) | ![专辑下载页面](https://raw.githubusercontent.com/pewee-live/netease-dl/refs/heads/master/pics/2.JPG) |
 
 ---
 

@@ -92,9 +92,9 @@ java  -jar   neteasemusic-1.0.0.jar --download.path=/media/music/
 
 ```bash
 #拉取镜像
-docker pull peweelive/netease-music-dl:1.0.0
+docker pull peweelive/netease-music-dl:latest
 #启动
-docker run -d -p 8080:8080 --privileged  --name=netease-music-dl  -v {你自己的路径}:/media/music/ --restart unless-stopped  -e TZ=Asia/Shanghai peweelive/netease-music-dl:1.0.0
+docker run -d -p 8080:8080 --privileged  --name=netease-music-dl  -v {你自己的路径}:/media/music/ --restart unless-stopped  -e TZ=Asia/Shanghai peweelive/netease-music-dl:latest
 #浏览器访问 http://127.0.0.1:8080/
 
 ```
@@ -102,9 +102,9 @@ docker run -d -p 8080:8080 --privileged  --name=netease-music-dl  -v {你自己�
 如果你需要自己构建dockeriamge,参考build中的步骤打包生成jar后
 ```bash
 
-docker build -t {你自己的dockerid}/netease-music-dl:1.0.0 .
+docker build -t {你自己的dockerid}/netease-music-dl:latest .
 
-docker push {你自己的dockerid}/netease-music-dl:1.0.0
+docker push {你自己的dockerid}/netease-music-dl:dl:latest
 
 ```
 

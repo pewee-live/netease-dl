@@ -67,19 +67,21 @@
 ### 🚀 启动方式
 
 ```bash
-# 1. 克隆项目
+# 1. 克隆项目(如果你不想自己build可以直接到release下载后至第4步)
 git clone https://github.com/pewee-live/netease-dl.git
+#切换到项目目录
+cd netease-dl
 
-# 2. 修改配置
+# 2. 修改配置(可选)
 # 打开 src/main/resources/application.properties，修改：
 download.path=/你的本地下载目录,注意下载目录必须以/结尾
 
 # 3. 构建项目
-cd netease-dl
 ./gradlew build    # 或 gradle build
+cd build/libs/  	#切换到Build目录
 
 # 4. 启动项目(也可以在这里通过注入参数的方式修改下载路径,注意下载目录必须以/结尾)
-java -jar  build/libs/neteasemusic-1.0.0.jar java  -jar   neteasemusic-1.0.0.jar --download.path=/media/music/
+java  -jar   neteasemusic-1.0.0.jar --download.path=/media/music/
 
 # 5. 访问页面
 浏览器访问 http://127.0.0.1:8080/

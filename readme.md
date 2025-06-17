@@ -116,3 +116,7 @@ docker push {你自己的dockerid}/netease-music-dl:1.0.0
 🌐 GitHub：pewee-live
 
 🎉 欢迎 Star、Fork 和 Issue 交流～
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

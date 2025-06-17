@@ -1,4 +1,4 @@
-FROM fabric8/java-alpine-openjdk8-jdk:1.9.0
+FROM eclipse-temurin:8-jdk-alpine
 MAINTAINER pewee 20250617
 RUN mkdir -p /app/java/  /media/music
 ENV auther=pewee

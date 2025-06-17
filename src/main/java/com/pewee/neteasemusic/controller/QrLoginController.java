@@ -40,8 +40,13 @@ public class QrLoginController {
 	
 	
 	@GetMapping("/home")
-    public String home() {
-        return "home"; // 渲染 home.html 页面
+    public String home(Model model) {
+		if(neteaseAPIService.checkReady()) {
+    		log.info("已登录,跳转到功能页面");
+    		return "home";
+    	} else {
+    		return generateQr(model);
+    	}
     }
 	
 

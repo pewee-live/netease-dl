@@ -55,6 +55,10 @@ public class NeteaseAPIService implements InitializingBean{
 		 if (file.exists()) {
 			 file.delete();
 		 }
+		 File pFile = new File(file.getParent());
+		 if(!pFile.exists()) {
+			 pFile.mkdirs();
+		 }
 		 FileOutputStream outputStream = null;
 		 try {
 			outputStream = new FileOutputStream(file);

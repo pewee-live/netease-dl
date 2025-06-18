@@ -112,6 +112,7 @@
 	        <input type="text" id="albumId" placeholder="输入专辑 ID">
 	        <button onclick="loadAlbumInfo()">查看专辑</button>
 	        <div id="album-info">
+	        	<p><strong>下载：</strong> <span id="album-download"></span></p>
 			    <p><strong>专辑名：</strong> <span id="album-name"></span></p>
 			    <p><strong>歌手：</strong> <span id="album-artist"></span></p>
 			    <p><strong>发行时间：</strong> <span id="album-publish-time"></span></p>
@@ -267,7 +268,7 @@
 		                li.textContent = `${track.name} - ${track.artists}（ID: ${track.id}）`;
 		                tracksList.appendChild(li);
 		            });
-		            document.getElementById("album-info").innerHTML += `
+		            document.getElementById("album-download").innerHTML = `
 					    <button onclick="downloadAlbum(${album.id})">下载整个专辑</button>
 					`;
 		        })

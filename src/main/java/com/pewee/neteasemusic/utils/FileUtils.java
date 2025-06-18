@@ -30,6 +30,13 @@ public class FileUtils {
 	    }
     }
 	
+	public static String getValidatedPathName(String name) {
+		if(name.contains("/")) {
+			return name.replaceAll("/", "#");
+		} 
+		return name;
+	}
+	
 	public static Path writeToFile(Path path, InputStream is) {
 		try {
 	        if (!Files.exists(path)) {

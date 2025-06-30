@@ -47,12 +47,29 @@ public class AnalysisController {
     	PlaylistAnalysisRespDTO  result = analysisService.analyzePlaylist(id);
             return RespEntity.apply(CommonRespInfo.SUCCESS,result);
     }
-
+    
+    
+    /**
+     * 搜索 
+     * @param keyword 关键词
+     * @param limit 每页条数
+     * @param offset 偏移量
+     * @param type  搜索类型
+     * 	单曲	1
+		歌手	100
+		专辑	10
+		歌单	1000
+		用户	1002
+		MV	1004
+		歌词	1006
+     * @return
+     * @throws Exception
+     */
     @RequestMapping(value = "/Search", method = {RequestMethod.GET, RequestMethod.POST})
     public RespEntity<?> search(@RequestParam(required = true) String keywords,
                                     @RequestParam(required = false, defaultValue = "50") int limit,
-                                    @RequestParam(required = false, defaultValue = "0") int offset) {
-    	List<TrackDTO> result = analysisService.searchMusic(keywords, limit,offset);
+                                    @RequestParam(required = false, defaultValue = "0") int offset,@RequestParam(required = false) Integer type) {
+    	List<?> result = analysisService.searchMusic(keywords, limit,offset,type);
             return RespEntity.apply(CommonRespInfo.SUCCESS,result);
        
     }

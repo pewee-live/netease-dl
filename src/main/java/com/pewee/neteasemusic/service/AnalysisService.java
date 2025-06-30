@@ -15,8 +15,11 @@ import com.google.common.collect.Lists;
 import com.pewee.neteasemusic.enums.CommonRespInfo;
 import com.pewee.neteasemusic.exceptions.ServiceException;
 import com.pewee.neteasemusic.models.dtos.AlbumAnalysisRespDTO;
+import com.pewee.neteasemusic.models.dtos.AlbumDTO;
 import com.pewee.neteasemusic.models.dtos.AlbumInfoDTO;
+import com.pewee.neteasemusic.models.dtos.ArtistDTO;
 import com.pewee.neteasemusic.models.dtos.PlaylistAnalysisRespDTO;
+import com.pewee.neteasemusic.models.dtos.PlaylistDTO;
 import com.pewee.neteasemusic.models.dtos.PlaylistInfoDTO;
 import com.pewee.neteasemusic.models.dtos.SingleMusicAnalysisRespDTO;
 import com.pewee.neteasemusic.models.dtos.TrackDTO;
@@ -72,28 +75,87 @@ public class AnalysisService {
             return null;
         }
     }
-
-    public List<TrackDTO> searchMusic(String keywords, Integer limit,int offset) {
+	
+	/**
+     * 搜索 
+     * @param keyword 关键词
+     * @param limit 每页条数
+     * @param offset 偏移量
+     * @param type  搜索类型
+     * 	单曲	1
+		歌手	100
+		专辑	10
+		歌单	1000
+     * @return
+     * @throws Exception
+     */
+    public List<?> searchMusic(String keywords, Integer limit,int offset,Integer type) {
     	checkReady();
+    	if (null == type) {
+    		type = 1;
+    	}
         try {
-            String respStr = neteaseAPIService.searchMusic(keywords, limit,offset,1);
+            String respStr = neteaseAPIService.searchMusic(keywords, limit,offset,type);
             JSONObject resp = JSON.parseObject(respStr);
-            JSONArray songs = resp.getJSONObject("result").getJSONArray("songs");
+            if (1 == type) {
+            	//单曲	1
+            	JSONArray songs = resp.getJSONObject("result").getJSONArray("songs");
 
-            List<TrackDTO> trackList = new ArrayList<>();
-            for (int i = 0; i < songs.size(); i++) {
-                JSONObject song = songs.getJSONObject(i);
-                TrackDTO dto = new TrackDTO();
-                dto.setId(song.getLong("id"));
-                dto.setName(song.getString("name"));
-                dto.setPicUrl(song.getJSONObject("al").getString("picUrl"));
-                dto.setAlbum(song.getJSONObject("al").getString("name"));
-                dto.setArtists(song.getJSONArray("ar").stream()
-                    .map(ar -> ((JSONObject) ar).getString("name"))
-                    .collect(Collectors.joining("/")));
-                trackList.add(dto);
+                List<TrackDTO> trackList = new ArrayList<>();
+                for (int i = 0; i < songs.size(); i++) {
+                    JSONObject song = songs.getJSONObject(i);
+                    TrackDTO dto = new TrackDTO();
+                    dto.setId(song.getLong("id"));
+                    dto.setName(song.getString("name"));
+                    dto.setPicUrl(song.getJSONObject("al").getString("picUrl"));
+                    dto.setAlbum(song.getJSONObject("al").getString("name"));
+                    dto.setArtists(song.getJSONArray("ar").stream()
+                        .map(ar -> ((JSONObject) ar).getString("name"))
+                        .collect(Collectors.joining("/")));
+                    trackList.add(dto);
+                }
+                return trackList;
             }
-            return trackList;
+            
+            if (100 == type) {
+            	//歌手	100
+            	JSONArray artists = resp.getJSONObject("result").getJSONArray("artists");
+            	List<ArtistDTO> artistList = new ArrayList<>();
+                for (int i = 0; i < artists.size(); i++) {
+                    JSONObject artist = artists.getJSONObject(i);
+                    ArtistDTO dto = new ArtistDTO();
+                    dto.setId(artist.getLong("id"));
+                    dto.setName(artist.getString("name"));
+                    dto.setPicUrl(artist.getString("picUrl"));
+                    artistList.add(dto);
+                }
+                return artistList;
+            }
+            
+            if (10 == type) {
+            	//专辑	10
+            	JSONArray albums = resp.getJSONObject("result").getJSONArray("albums");
+            	List<AlbumDTO> alubmList = new ArrayList<>();
+            	for (int i = 0; i < albums.size(); i++) {
+                    JSONObject alubm = albums.getJSONObject(i);
+                    AlbumDTO dto =  JSON.parseObject(JSON.toJSONString(alubm),AlbumDTO.class);
+                    alubmList.add(dto);
+                }
+                return alubmList;
+            }
+            
+            if (1000 == type) {
+            	//歌单 1000
+            	JSONArray playlists = resp.getJSONObject("result").getJSONArray("playlists");
+            	List<PlaylistDTO> playList = new ArrayList<>();
+            	for (int i = 0; i < playlists.size(); i++) {
+                    JSONObject p = playlists.getJSONObject(i);
+                    PlaylistDTO dto =  JSON.parseObject(JSON.toJSONString(p),PlaylistDTO.class);
+                    playList.add(dto);
+                }
+            	return playList;
+            }
+            return null;
         } catch (Exception e) {
             return Collections.emptyList();
         }

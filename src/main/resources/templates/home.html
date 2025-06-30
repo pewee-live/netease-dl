@@ -123,14 +123,26 @@
 	    </section>
 	  </div>
 	
-	  <div id="tab-search" class="tab-content">
-	    <h3>搜索</h3>
-	    <section>
-	        <input type="text" id="searchKeyword" placeholder="关键词">
-	        <button onclick="searchSongs()">搜索</button>
-	        <ul id="search-results"></ul>
-	    </section>
-	  </div>
+		  <div id="tab-search" class="tab-content">
+			  <h3>搜索</h3>
+			  <section>
+			    <input type="text" id="searchKeyword" placeholder="关键词" />
+			    <select id="searchType">
+			      <option value="1">单曲</option>
+			      <option value="100">歌手</option>
+			      <option value="10">专辑</option>
+			      <option value="1000">歌单</option>
+			    </select>
+			    <input type="number" name = "每页数量" id="searchLimit" value="10" min="1" />
+			    <button onclick="searchSongs()">搜索</button>
+			    <ul id="search-results"></ul>
+			    <div id="search-pagination">
+			      <button onclick="changeSearchPage(-1)" id="search-prev" disabled>上一页</button>
+			      <span id="search-page-indicator">第 1 页</span>
+			      <button onclick="changeSearchPage(1)" id="search-next">下一页</button>
+			    </div>
+			  </section>
+		</div>
 	</div>
 	  
 
@@ -313,21 +325,113 @@
 		    .catch(err => alert("加载歌曲失败：" + err));
 		}
 
-        function searchSongs() {
-            const kw = document.getElementById("searchKeyword").value;
-            if (!kw) return alert("请输入关键词");
-            axios.post(`/Search?keywords=${encodeURIComponent(kw)}`)
-                .then(resp => {
-                    const list = document.getElementById("search-results");
-                    list.innerHTML = '';
-                    resp.data.data.forEach(song => {
-                        const li = document.createElement("li");
-                        li.innerText = `${song.name} - ${song.artists}（ID : ${song.id}）`;
-                        list.appendChild(li);
-                    });
-                })
-                .catch(err => alert("搜索失败：" + err));
-        }
+        let searchPage = 1;
+		const searchPageSize = () => parseInt(document.getElementById("searchLimit").value) || 10;
+		
+		function searchSongs() {
+		    const kw = document.getElementById("searchKeyword").value;
+		    const type = document.getElementById("searchType").value;
+		    const limit = searchPageSize();
+		    const offset = (searchPage - 1) * limit;
+		
+		    if (!kw) {
+		        return alert("请输入关键词");
+		    }
+		
+		    axios.post(`/Search?keywords=${encodeURIComponent(kw)}&type=${type}&limit=${limit}&offset=${offset}`)
+		        .then(resp => {
+		            const list = document.getElementById("search-results");
+		            const results = resp.data.data || [];
+		            list.innerHTML = '';
+		
+		            if (results.length === 0) {
+		                list.innerHTML = '<li>无搜索结果</li>';
+		                return;
+		            }
+		            
+		            //渲染内容
+		            renderSearchResultsByType(type, results);
+		
+		            // 更新页码显示
+		            document.getElementById("search-page-indicator").textContent = `第 ${searchPage} 页`;
+		            document.getElementById("search-prev").disabled = searchPage === 1;
+		            document.getElementById("search-next").disabled = results.length < limit; // 如果结果不足一页，说明没有下一页
+		        })
+		        .catch(err => {
+		            alert("搜索失败：" + err);
+		        });
+		}
+		
+		function renderSearchResultsByType(type, data) {
+		    const list = document.getElementById("search-results");
+		    list.innerHTML = '';
+		
+		    if (type === "1") {
+		        // 🎵 单曲
+		        data.forEach(item => {
+		            const li = document.createElement("li");
+		            li.textContent = `${item.name} - ${item.artists}（ID: ${item.id}）`;
+		            list.appendChild(li);
+		        });
+		    } else if (type === "100") {
+		        // 🎤 歌手
+		        data.forEach(artist => {
+		            const li = document.createElement("li");
+		            li.innerHTML = `
+		                <img src="${artist.picUrl}" alt="头像" style="height:40px;width:40px;border-radius:50%;margin-right:10px;">
+		                ${artist.name}（ID: ${artist.id}）
+		            `;
+		            list.appendChild(li);
+		        });
+		    } else if (type === "10") {
+		    	// 专辑
+		    	data.forEach(album => {
+				
+					 // 渲染专辑 AlbumDTO
+      				const date = album.publishTime ? new Date(album.publishTime).toLocaleDateString() : "未知";
+		            const li = document.createElement("li");
+		            li.innerHTML = `
+				        <div style="margin-bottom: 1em; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+				          <img src="${album.picUrl}" alt="封面" width="80" style="vertical-align: middle; margin-right: 10px;" />
+				          <strong>${album.name}</strong>（共 ${album.size || 0} 首）<br/>
+				          🏷️ ID: ${album.id || "未知"}<br/>
+				          🎤 艺术家: ${album.artist?.name || "未知"}<br/>
+				          🏢 发行公司: ${album.company || "未知"}<br/>
+				          📅 发行时间: ${date}<br/>
+				        </div>
+				      `;
+		            list.appendChild(li);
+		        });
+		    } else if (type === "1000") {
+		    	//歌单
+		    	data.forEach(playlist => {
+				
+		            const li = document.createElement("li");
+		            li.innerHTML = `
+				      <div style="margin-bottom: 1em; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+				        <img src="${playlist.coverImgUrl}" alt="封面" width="80" style="vertical-align: middle; margin-right: 10px;" />
+				        <strong>${playlist.name}</strong>（共 ${playlist.trackCount || 0} 首）<br/>
+				        🆔 歌单ID: ${playlist.id}<br/>
+				        📄 描述: ${playlist.description || "无"}<br/>
+				      </div>
+				    `;
+		            list.appendChild(li);
+		        });
+		    }	else {
+		        const li = document.createElement("li");
+		        li.textContent = `暂不支持该类型（type=${type}）的渲染`;
+		        list.appendChild(li);
+		    }
+		}
+		
+		function changeSearchPage(offset) {
+		    const newPage = searchPage + offset;
+		    if (newPage < 1) return;
+		
+		    searchPage = newPage;
+		    searchSongs();
+		}
+
         
         function downloadSingle(id) {
 		    axios.get(`/v2/single?id=${id}`)

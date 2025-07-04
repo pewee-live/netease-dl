@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NeteaseAPIService implements InitializingBean{
 	
-	private transient boolean ready = false;
+	private volatile boolean ready = false;
 	
 	 private static final String AES_KEY = "e82ckenh8dichen8";
 	 

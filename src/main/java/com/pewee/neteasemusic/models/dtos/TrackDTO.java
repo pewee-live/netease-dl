@@ -19,4 +19,10 @@ public class TrackDTO {
 	
 	//pic url
 	private String picUrl;
+	
+	//光盘编号
+	private Integer discNumber;
+	
+	//音轨号
+	private Integer trackNumber;
 }

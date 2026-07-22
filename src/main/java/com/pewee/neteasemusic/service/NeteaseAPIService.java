@@ -114,6 +114,21 @@ public class NeteaseAPIService implements InitializingBean{
 	 public boolean checkReady() {
 		 return this.ready;
 	 }
+
+	/**
+	 * 登出：清除cookie和登录状态，以便重新登录
+	 */
+	public void logout() {
+		this.ready = false;
+		this.cookie = null;
+		this.uid = null;
+		String cookiePath = path + cookieFile;
+		File file = new File(cookiePath);
+		if (file.exists()) {
+			file.delete();
+		}
+		log.info("已登出，可以重新登录");
+	}
 	 
 	 
 	 private static  String getCookieValue(String cookie) {

@@ -59,11 +59,33 @@ public class AnalysisService {
             dto.setName(songInfo.getString("name"));
             dto.setPic(songInfo.getJSONObject("al").getString("picUrl"));
             dto.setAl_name(songInfo.getJSONObject("al").getString("name"));
+            
+            JSONArray arArray = songInfo.getJSONArray("ar");
             dto.setAr_name(
-                songInfo.getJSONArray("ar").stream()
+                arArray.stream()
                     .map(ar -> ((JSONObject) ar).getString("name"))
                     .collect(Collectors.joining("/"))
             );
+            // 专辑艺术家取第一个艺术家
+            if (arArray != null && !arArray.isEmpty()) {
+                dto.setAlbum_artist(((JSONObject) arArray.get(0)).getString("name"));
+            }
+            
+            // 解析光盘编号（cd字段为字符串如"1"）
+            String cd = songInfo.getString("cd");
+            if (cd != null) {
+                try { dto.setDisc_number(Integer.parseInt(cd)); } catch (NumberFormatException ignored) {}
+            }
+            // 解析音轨号
+            dto.setTrack_number(songInfo.getInteger("no"));
+            // 解析年份（publishTime为毫秒时间戳）
+            Long publishTime = songInfo.getLong("publishTime");
+            if (publishTime != null && publishTime > 0) {
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                cal.setTimeInMillis(publishTime);
+                dto.setYear(cal.get(java.util.Calendar.YEAR));
+            }
+            
             dto.setLyric(lyricJson.getJSONObject("lrc") != null ? lyricJson.getJSONObject("lrc").getString("lyric") : "");
             dto.setTlyric(lyricJson.containsKey("tlyric") ? lyricJson.getJSONObject("tlyric").getString("lyric") : null);
             dto.setUrl(songUrlData.getString("url").replace("http://", "https://"));
@@ -112,6 +134,9 @@ public class AnalysisService {
                     dto.setArtists(song.getJSONArray("ar").stream()
                         .map(ar -> ((JSONObject) ar).getString("name"))
                         .collect(Collectors.joining("/")));
+                    String cd = song.getString("cd");
+                    if (cd != null) { try { dto.setDiscNumber(Integer.parseInt(cd)); } catch (NumberFormatException ignored) {} }
+                    dto.setTrackNumber(song.getInteger("no"));
                     trackList.add(dto);
                 }
                 return trackList;
@@ -189,6 +214,9 @@ public class AnalysisService {
                 dto.setArtists(track.getJSONArray("ar").stream()
                     .map(ar -> ((JSONObject) ar).getString("name"))
                     .collect(Collectors.joining("/")));
+                String cd2 = track.getString("cd");
+                if (cd2 != null) { try { dto.setDiscNumber(Integer.parseInt(cd2)); } catch (NumberFormatException ignored) {} }
+                dto.setTrackNumber(track.getInteger("no"));
                 trackList.add(dto);
             }
             playlistInfo.setTracks(trackList);
@@ -227,6 +255,9 @@ public class AnalysisService {
                 dto.setArtists(track.getJSONArray("ar").stream()
                     .map(ar -> ((JSONObject) ar).getString("name"))
                     .collect(Collectors.joining("/")));
+                String cd3 = track.getString("cd");
+                if (cd3 != null) { try { dto.setDiscNumber(Integer.parseInt(cd3)); } catch (NumberFormatException ignored) {} }
+                dto.setTrackNumber(track.getInteger("no"));
                 trackList.add(dto);
             }
             albumInfo.setSongs(trackList);

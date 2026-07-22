@@ -40,6 +40,7 @@ dependencies {
 	implementation("com.google.zxing:core:${zxingVersion}")
 	implementation("com.google.zxing:javase:${zxingVersion}")
 	implementation("net.jthink:jaudiotagger:3.0.1")
+	implementation("org.xerial:sqlite-jdbc:3.41.2.2")
 }
 
 tasks.named('test') {

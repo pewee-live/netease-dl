@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netease-DL 音乐下载器</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1; --primary-hover: #4f46e5; --bg: #f8fafc;
+            --card: #fff; --border: #e2e8f0; --text: #1e293b; --text-secondary: #64748b;
+            --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --info: #3b82f6;
+            --radius: 12px; --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:var(--bg); color:var(--text); }
+        #app { max-width:960px; margin:0 auto; padding:16px; }
+        .app-header { display:flex; align-items:center; justify-content:space-between; padding:16px 0; margin-bottom:16px; border-bottom:1px solid var(--border); }
+        .app-header h1 { font-size:1.4rem; font-weight:700; }
+        .app-header .login-badge { font-size:.8rem; padding:4px 10px; border-radius:20px; }
+        .badge-ok { background:#dcfce7; color:#166534; }
+        .badge-no { background:#fee2e2; color:#991b1b; cursor:pointer; }
+        .tabs { display:flex; gap:4px; margin-bottom:20px; background:var(--card); border-radius:var(--radius); padding:4px; box-shadow:var(--shadow); }
+        .tab-btn { flex:1; padding:10px; border:none; background:transparent; border-radius:8px; cursor:pointer; font-size:.9rem; font-weight:500; color:var(--text-secondary); transition:all .2s; }
+        .tab-btn.active { background:var(--primary); color:#fff; }
+        .tab-btn:hover:not(.active) { background:#f1f5f9; }
+        .card { background:var(--card); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); margin-bottom:16px; }
+        .search-bar { display:flex; gap:8px; margin-bottom:16px; }
+        .search-bar input, .search-bar select { padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:.9rem; outline:none; transition:border .2s; }
+        .search-bar input:focus { border-color:var(--primary); }
+        .search-bar input { flex:1; }
+        .btn { padding:8px 18px; border:none; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:500; transition:all .15s; display:inline-flex; align-items:center; gap:4px; }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { background:var(--primary-hover); }
+        .btn-sm { padding:5px 12px; font-size:.8rem; }
+        .btn-success { background:var(--success); color:#fff; }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+        .btn-outline:hover { background:#f1f5f9; }
+        .btn:disabled { opacity:.5; cursor:not-allowed; }
+        .track-list { list-style:none; }
+        .track-item { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+        .track-item:last-child { border-bottom:none; }
+        .track-info { flex:1; min-width:0; }
+        .track-name { font-weight:500; font-size:.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .track-meta { font-size:.78rem; color:var(--text-secondary); margin-top:2px; }
+        .track-img { width:44px; height:44px; border-radius:6px; object-fit:cover; margin-right:12px; flex-shrink:0; }
+        .pagination { display:flex; justify-content:center; align-items:center; gap:12px; margin-top:16px; }
+        .empty { text-align:center; padding:40px 0; color:var(--text-secondary); }
+        .queue-item { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
+        .queue-status { width:8px; height:8px; border-radius:50%; margin-right:10px; flex-shrink:0; }
+        .status-WAITING { background:var(--warning); }
+        .status-DOWNLOADING { background:var(--info); animation:pulse 1s infinite; }
+        .status-COMPLETED { background:var(--success); }
+        .status-FAILED { background:var(--danger); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .setting-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border); }
+        .setting-row:last-child { border-bottom:none; }
+        .setting-label { font-weight:500; }
+        .setting-desc { font-size:.78rem; color:var(--text-secondary); margin-top:2px; }
+        select.form-select { padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:.85rem; outline:none; }
+        .switch { position:relative; display:inline-block; width:44px; height:24px; }
+        .switch input { opacity:0; width:0; height:0; }
+        .slider { position:absolute; cursor:pointer; inset:0; background:#cbd5e1; border-radius:24px; transition:.3s; }
+        .slider:before { content:""; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+        .switch input:checked + .slider { background:var(--primary); }
+        .switch input:checked + .slider:before { transform:translateX(20px); }
+        .qr-section { text-align:center; padding:20px; }
+        .qr-section img { max-width:200px; border-radius:8px; margin:16px auto; display:block; }
+        .album-detail { display:flex; gap:16px; margin-bottom:16px; }
+        .album-detail img { width:160px; height:160px; border-radius:8px; object-fit:cover; flex-shrink:0; }
+        .album-detail-info h3 { font-size:1.1rem; margin-bottom:6px; }
+        .album-detail-info p { font-size:.85rem; color:var(--text-secondary); margin-bottom:4px; }
+        .toast { position:fixed; top:20px; right:20px; padding:12px 20px; border-radius:8px; color:#fff; font-size:.85rem; z-index:9999; animation:slideIn .3s; }
+        .toast-success { background:var(--success); }
+        .toast-error { background:var(--danger); }
+        .toast-info { background:var(--info); }
+        @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+        .sub-tabs { display:flex; gap:4px; margin-bottom:16px; }
+        .sub-tab { padding:6px 14px; border:1px solid var(--border); background:transparent; border-radius:20px; cursor:pointer; font-size:.8rem; color:var(--text-secondary); transition:all .2s; }
+        .sub-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+        .loading { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .6s linear infinite; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .count-badge { background:var(--danger); color:#fff; font-size:.7rem; padding:2px 6px; border-radius:10px; margin-left:6px; }
+        .progress-bar { width:100%; height:6px; background:#e2e8f0; border-radius:3px; margin-top:6px; overflow:hidden; }
+        .progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),#818cf8); border-radius:3px; transition:width .5s ease; }
+        .progress-stats { font-size:.72rem; color:var(--text-secondary); margin-top:3px; display:flex; gap:10px; }
+        .stats-bar { display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+        .stat-item { text-align:center; flex:1; min-width:60px; padding:10px 6px; background:#f8fafc; border-radius:8px; }
+        .stat-num { font-size:1.2rem; font-weight:700; color:var(--primary); }
+        .stat-label { font-size:.72rem; color:var(--text-secondary); margin-top:2px; }
+        /* 弹窗样式 */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; display:flex; align-items:center; justify-content:center; animation:fadeIn .2s; }
+        .modal-content { background:var(--card); border-radius:var(--radius); width:90%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.2); animation:scaleIn .25s; }
+        .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); flex-shrink:0; }
+        .modal-header h3 { font-size:1.05rem; font-weight:600; }
+        .modal-close { width:30px; height:30px; border:none; background:#f1f5f9; border-radius:50%; cursor:pointer; font-size:1.1rem; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; transition:all .15s; }
+        .modal-close:hover { background:#e2e8f0; color:var(--text); }
+        .modal-body { padding:20px; overflow-y:auto; flex:1; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes scaleIn { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- Toast通知 -->
+    <div v-if="toast.show" :class="'toast toast-'+toast.type">{{ toast.msg }}</div>
+
+    <!-- Header -->
+    <div class="app-header">
+        <h1>🎵 Netease-DL</h1>
+        <span :class="'login-badge ' + (loginStatus ? 'badge-ok' : 'badge-no')" @click="!loginStatus && (activeTab='settings')">
+            {{ loginStatus ? '✓ 已登录' : '✗ 未登录 · 点击登录' }}
+        </span>
+    </div>
+
+    <!-- 主Tab导航 -->
+    <div class="tabs">
+        <button :class="'tab-btn'+(activeTab==='search'?' active':'')" @click="activeTab='search'">搜索</button>
+        <button :class="'tab-btn'+(activeTab==='queue'?' active':'')" @click="activeTab='queue';loadQueue()">
+            下载队列 <span v-if="queueWaiting>0" class="count-badge">{{ queueWaiting }}</span>
+        </button>
+        <button :class="'tab-btn'+(activeTab==='settings'?' active':'')" @click="activeTab='settings'">设置</button>
+    </div>
+
+    <!-- ==================== 搜索页 ==================== -->
+    <div v-show="activeTab==='search'">
+        <div class="sub-tabs">
+            <button :class="'sub-tab'+(searchType==='song'?' active':'')" @click="searchType='song';searchResults=[];searchPage=1">歌曲搜索</button>
+            <button :class="'sub-tab'+(searchType==='album'?' active':'')" @click="searchType='album';searchResults=[];searchPage=1">专辑搜索</button>
+            <button :class="'sub-tab'+(searchType==='playlist'?' active':'')" @click="searchType='playlist';searchResults=[];searchPage=1">歌单搜索</button>
+            <button :class="'sub-tab'+(searchType==='mylist'?' active':'')" @click="searchType='mylist';loadMyPlaylists()">我的歌单</button>
+        </div>
+
+        <div class="search-bar" v-show="searchType!=='mylist'">
+            <input v-model="searchKeyword" @keyup.enter="doSearch()" :placeholder="searchType==='song'?'搜索歌曲...':searchType==='album'?'搜索专辑...':'搜索歌单...'">
+            <button class="btn btn-primary" @click="doSearch()" :disabled="!searchKeyword.trim()">搜索</button>
+        </div>
+
+        <!-- 歌曲搜索结果 -->
+        <div v-if="searchType==='song'" class="card" v-show="searchResults.length>0">
+            <ul class="track-list">
+                <li v-for="item in searchResults" :key="item.id" class="track-item">
+                    <img v-if="item.picUrl" :src="item.picUrl" class="track-img">
+                    <div class="track-info">
+                        <div class="track-name">{{ item.name }}</div>
+                        <div class="track-meta">{{ item.artists }} · {{ item.album }}</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary" @click="downloadSingle(item.id)">下载</button>
+                </li>
+            </ul>
+            <div class="pagination" v-if="searchResults.length>0">
+                <button class="btn btn-outline btn-sm" :disabled="searchPage<=1" @click="searchPage--;doSearch()">上一页</button>
+                <span style="font-size:.85rem">第 {{ searchPage }} 页</span>
+                <button class="btn btn-outline btn-sm" :disabled="searchResults.length<searchLimit" @click="searchPage++;doSearch()">下一页</button>
+            </div>
+        </div>
+
+        <!-- 专辑搜索结果 -->
+        <div v-if="searchType==='album'" class="card" v-show="searchResults.length>0">
+            <ul class="track-list">
+                <li v-for="item in searchResults" :key="item.id" class="track-item">
+                    <img v-if="item.picUrl" :src="item.picUrl" class="track-img">
+                    <div class="track-info">
+                        <div class="track-name">{{ item.name }}</div>
+                        <div class="track-meta">{{ item.artist?.name||'未知' }} · {{ item.size||0 }}首 · {{ item.publishTime?formatDate(item.publishTime):'' }}</div>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-sm btn-outline" @click="viewAlbum(item.id)">查看</button>
+                        <button class="btn btn-sm btn-primary" @click="downloadAlbum(item.id)">下载</button>
+                    </div>
+                </li>
+            </ul>
+            <div class="pagination" v-if="searchResults.length>0">
+                <button class="btn btn-outline btn-sm" :disabled="searchPage<=1" @click="searchPage--;doSearch()">上一页</button>
+                <span style="font-size:.85rem">第 {{ searchPage }} 页</span>
+                <button class="btn btn-outline btn-sm" :disabled="searchResults.length<searchLimit" @click="searchPage++;doSearch()">下一页</button>
+            </div>
+        </div>
+
+        <!-- 歌单搜索结果 -->
+        <div v-if="searchType==='playlist'" class="card" v-show="searchResults.length>0">
+            <ul class="track-list">
+                <li v-for="item in searchResults" :key="item.id" class="track-item">
+                    <img v-if="item.picUrl" :src="item.picUrl" class="track-img">
+                    <div class="track-info">
+                        <div class="track-name">{{ item.name }}</div>
+                        <div class="track-meta">{{ item.creator }} · {{ item.trackCount }}首</div>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-sm btn-outline" @click="viewPlaylist(item.id)">查看</button>
+                        <button class="btn btn-sm btn-primary" @click="downloadPlaylist(item.id)">下载</button>
+                    </div>
+                </li>
+            </ul>
+            <div class="pagination" v-if="searchResults.length>0">
+                <button class="btn btn-outline btn-sm" :disabled="searchPage<=1" @click="searchPage--;doSearch()">上一页</button>
+                <span style="font-size:.85rem">第 {{ searchPage }} 页</span>
+                <button class="btn btn-outline btn-sm" :disabled="searchResults.length<searchLimit" @click="searchPage++;doSearch()">下一页</button>
+            </div>
+        </div>
+
+        <!-- 我的歌单 -->
+        <div v-if="searchType==='mylist'" class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3>我的歌单</h3>
+                <button class="btn btn-sm btn-outline" @click="loadMyPlaylists()">刷新</button>
+            </div>
+            <div v-if="myPlaylists.length===0 && !myListLoading" class="empty">{{ loginStatus ? '暂无收藏歌单' : '请先登录' }}</div>
+            <div v-if="myListLoading" class="empty"><span class="loading"></span> 加载中...</div>
+            <ul class="track-list" v-show="myPlaylists.length>0">
+                <li v-for="item in myPlaylists" :key="item.id" class="track-item">
+                    <img v-if="item.coverImgUrl" :src="item.coverImgUrl" class="track-img">
+                    <div class="track-info">
+                        <div class="track-name">{{ item.name }}</div>
+                        <div class="track-meta">{{ item.creator }} · {{ item.trackCount }}首</div>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-sm btn-outline" @click="viewPlaylist(item.id)">查看</button>
+                        <button class="btn btn-sm btn-primary" @click="downloadPlaylist(item.id)">下载</button>
+                    </div>
+                </li>
+            </ul>
+            <div class="pagination" v-if="myPlaylists.length>=myListLimit">
+                <button class="btn btn-outline btn-sm" :disabled="myListPage<=1" @click="myListPage--;loadMyPlaylists()">上一页</button>
+                <span style="font-size:.85rem">第 {{ myListPage }} 页</span>
+                <button class="btn btn-outline btn-sm" @click="myListPage++;loadMyPlaylists()">下一页</button>
+            </div>
+        </div>
+
+
+        <div v-if="searchLoading" class="empty"><span class="loading"></span> 搜索中...</div>
+        <div v-if="!searchLoading && searched && searchResults.length===0" class="empty">没有找到相关结果</div>
+    </div>
+
+    <!-- ==================== 歌单详情弹窗 ==================== -->
+    <div v-if="playlistDetail" class="modal-overlay" @click.self="playlistDetail=null">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>歌单详情</h3>
+                <button class="modal-close" @click="playlistDetail=null">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="album-detail">
+                    <img v-if="playlistDetail.playlist.coverImgUrl" :src="playlistDetail.playlist.coverImgUrl">
+                    <div class="album-detail-info">
+                        <h3>{{ playlistDetail.playlist.name }}</h3>
+                        <p>创建者: {{ playlistDetail.playlist.creator }}</p>
+                        <p>共 {{ playlistDetail.playlist.tracks?.length||0 }} 首</p>
+                        <p v-if="playlistDetail.playlist.description" style="font-size:.8rem;margin-top:4px;">{{ playlistDetail.playlist.description }}</p>
+                        <button class="btn btn-sm btn-primary" style="margin-top:8px;" @click="downloadPlaylist(playlistDetail.playlist.id)">下载整个歌单</button>
+                    </div>
+                </div>
+                <ul class="track-list">
+                    <li v-for="(t,i) in playlistDetail.playlist.tracks" :key="t.id" class="track-item">
+                        <div class="track-info">
+                            <div class="track-name">{{ i+1 }}. {{ t.name }}</div>
+                            <div class="track-meta">{{ t.artists }} · {{ t.album }}</div>
+                        </div>
+                        <button class="btn btn-sm btn-primary" @click="downloadSingle(t.id)">下载</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 专辑详情弹窗 ==================== -->
+    <div v-if="albumDetail" class="modal-overlay" @click.self="albumDetail=null">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>专辑详情</h3>
+                <button class="modal-close" @click="albumDetail=null">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="album-detail">
+                    <img v-if="albumDetail.album.coverImgUrl" :src="albumDetail.album.coverImgUrl">
+                    <div class="album-detail-info">
+                        <h3>{{ albumDetail.album.name }}</h3>
+                        <p>艺术家: {{ albumDetail.album.artist }}</p>
+                        <p>发行时间: {{ albumDetail.album.publishTime?formatDate(albumDetail.album.publishTime):'未知' }}</p>
+                        <p>共 {{ albumDetail.album.songs?.length||0 }} 首</p>
+                        <button class="btn btn-sm btn-primary" style="margin-top:8px;" @click="downloadAlbum(albumDetail.album.id)">下载整张专辑</button>
+                    </div>
+                </div>
+                <ul class="track-list">
+                    <li v-for="(t,i) in albumDetail.album.songs" :key="t.id" class="track-item">
+                        <div class="track-info">
+                            <div class="track-name">{{ i+1 }}. {{ t.name }}</div>
+                            <div class="track-meta">{{ t.artists }}</div>
+                        </div>
+                        <button class="btn btn-sm btn-primary" @click="downloadSingle(t.id)">下载</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 下载队列页 ==================== -->
+    <div v-show="activeTab==='queue'">
+        <!-- 统计栏 -->
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3>下载队列</h3>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn btn-sm btn-outline" @click="loadQueue()">刷新</button>
+                    <button class="btn btn-sm btn-outline" @click="clearFinishedTasks()">清理已完成/失败</button>
+                    <button class="btn btn-sm btn-danger" @click="clearAllTasks()">清空队列</button>
+                </div>
+            </div>
+            <div v-if="queueTasks.length===0" class="empty">暂无下载任务</div>
+            <div v-for="task in queueTasks" :key="task.taskId" class="queue-item">
+                <div :class="'queue-status status-'+task.status"></div>
+                <div class="track-info" style="flex:1;min-width:0;">
+                    <div class="track-name">{{ task.songName }}</div>
+                    <div class="track-meta">
+                        {{ task.artist }} · {{ task.album }}
+                        <span v-if="task.parentName"> · {{ task.type==='ALBUM'?'专辑':'歌单' }}: {{ task.parentName }}</span>
+                    </div>
+                    <!-- 进度条：仅对 DOWNLOADING 且有 totalSize 的任务显示 -->
+                    <div v-if="task.status==='DOWNLOADING' && task.totalSize>0" class="progress-bar">
+                        <div class="progress-fill" :style="{width: progressPct(task)+'%'}"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span :style="{color: task.status==='COMPLETED'?'var(--success)':task.status==='FAILED'?'var(--danger)':task.status==='DOWNLOADING'?'var(--info)':'var(--warning)'}">
+                            {{ statusText(task.status) }}
+                        </span>
+                        <template v-if="task.status==='DOWNLOADING' && task.totalSize>0">
+                            <span>{{ progressPct(task) }}%</span>
+                            <span>{{ formatSize(task.bytesDownloaded) }} / {{ formatSize(task.totalSize) }}</span>
+                            <span>{{ formatSpeed(task.speed) }}</span>
+                            <span v-if="task.eta>0">剩余 {{ formatEta(task.eta) }}</span>
+                        </template>
+                        <span v-if="task.status==='COMPLETED' && task.totalSize>0">{{ formatSize(task.totalSize) }}</span>
+                        <span v-if="task.errorMessage" style="color:var(--danger)">{{ task.errorMessage }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 设置页 ==================== -->
+    <div v-show="activeTab==='settings'">
+        <!-- 登录状态 -->
+        <div class="card">
+            <h3 style="margin-bottom:12px;">账号管理</h3>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">登录状态</div>
+                    <div class="setting-desc">{{ loginStatus ? '已登录网易云音乐' : '未登录，部分功能不可用' }}</div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                    <button v-if="!loginStatus" class="btn btn-sm btn-primary" @click="startQrLogin()">扫码登录</button>
+                    <template v-else>
+                        <button class="btn btn-sm btn-outline" @click="logout()">退出登录</button>
+                        <button class="btn btn-sm btn-primary" @click="logout();startQrLogin()">重新登录</button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR登录区域 -->
+        <div v-if="showQr" class="card qr-section">
+            <h3>扫码登录</h3>
+            <p style="font-size:.85rem;color:var(--text-secondary);">请使用网易云音乐APP扫描下方二维码</p>
+            <img v-if="qrImage" :src="qrImage" alt="二维码">
+            <p style="font-size:.85rem;">{{ qrStatusText }}</p>
+            <button class="btn btn-sm btn-outline" style="margin-top:10px;" @click="showQr=false">关闭</button>
+        </div>
+
+        <!-- 下载配置 -->
+        <div class="card">
+            <h3 style="margin-bottom:12px;">下载配置</h3>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">音质等级</div>
+                    <div class="setting-desc">standard=标准 128k · exhigh=极高 320k · lossless=无损 · hires=Hi-Res</div>
+                </div>
+                <select class="form-select" v-model="qualityLevel" @change="setQuality()">
+                    <option value="standard">标准 (128k)</option>
+                    <option value="exhigh">极高 (320k)</option>
+                    <option value="lossless">无损 (FLAC)</option>
+                    <option value="hires">Hi-Res</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">允许重复下载</div>
+                    <div class="setting-desc">开启后将忽略已下载记录</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" v-model="repeatEnabled" @change="setRepeat()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">歌单信息写入专辑标签</div>
+                    <div class="setting-desc">下载歌单时，将歌单名称作为专辑名、歌单作者作为专辑艺术家写入ID3标签</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" v-model="playlistAsAlbum" @change="setPlaylistAsAlbum()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">下载路径</div>
+                    <div class="setting-desc">{{ downloadPath }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="text-align:center;">
+            <p style="font-size:.8rem;color:var(--text-secondary);">Netease-DL · <a href="https://github.com/pewee-live/netease-dl" target="_blank" style="color:var(--primary);text-decoration:none;">GitHub</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, onMounted, watch } = Vue;
+
+createApp({
+    setup() {
+        const activeTab = ref('search');
+        const loginStatus = ref(false);
+        const toast = reactive({ show: false, msg: '', type: 'info' });
+
+        function showToast(msg, type = 'info') {
+            toast.msg = msg; toast.type = type; toast.show = true;
+            setTimeout(() => { toast.show = false; }, 3000);
+        }
+
+        async function api(url, opts) {
+            try {
+                const r = opts ? await fetch(url, opts) : await fetch(url);
+                return await r.json();
+            } catch (e) {
+                showToast('请求失败: ' + e.message, 'error');
+                return null;
+            }
+        }
+
+        // ====== 登录 ======
+        const showQr = ref(false);
+        const qrImage = ref('');
+        const qrUnikey = ref('');
+        const qrStatusText = ref('请使用网易云音乐APP扫码');
+        let qrTimer = null;
+
+        async function checkLoginStatus() {
+            const r = await api('/login/status');
+            if (r && r.data === true) loginStatus.value = true;
+        }
+
+        async function startQrLogin() {
+            showQr.value = true;
+            qrStatusText.value = '正在生成二维码...';
+            try {
+                const r = await fetch('/api/qr/key');
+                const data = await r.json();
+                if (data.code === '000000' && data.data) {
+                    qrUnikey.value = data.data.unikey;
+                    qrImage.value = 'data:image/png;base64,' + data.data.qrImage;
+                    qrStatusText.value = '请使用网易云音乐APP扫码';
+                    startQrPolling();
+                } else {
+                    qrStatusText.value = '生成二维码失败';
+                }
+            } catch(e) {
+                qrStatusText.value = '生成二维码失败: ' + e.message;
+            }
+        }
+
+        function startQrPolling() {
+            if (qrTimer) clearInterval(qrTimer);
+            qrTimer = setInterval(async () => {
+                const r = await api('/qr/status?unikey=' + qrUnikey.value);
+                if (r && r.data === true) {
+                    clearInterval(qrTimer); qrTimer = null;
+                    loginStatus.value = true; showQr.value = false;
+                    showToast('登录成功！', 'success');
+                }
+            }, 2000);
+        }
+
+        // ====== 搜索 ======
+        const searchType = ref('song');
+        const searchKeyword = ref('');
+        const searchResults = ref([]);
+        const searchPage = ref(1);
+        const searchLimit = ref(30);
+        const searchLoading = ref(false);
+        const searched = ref(false);
+        const albumDetail = ref(null);
+
+        async function doSearch() {
+            if (!searchKeyword.value.trim()) return;
+            searchLoading.value = true; searched.value = true;
+            const typeMap = { song: 1, album: 10, playlist: 1000 };
+            const typeNum = typeMap[searchType.value] || 1;
+            const offset = (searchPage.value - 1) * searchLimit.value;
+            const r = await api(`/Search?keywords=${encodeURIComponent(searchKeyword.value)}&type=${typeNum}&limit=${searchLimit.value}&offset=${offset}`);
+            searchResults.value = (r && r.code === '000000' && r.data) ? r.data : [];
+            searchLoading.value = false;
+        }
+
+        async function viewAlbum(id) {
+            const r = await api('/Album?id=' + id);
+            if (r && r.code === '000000' && r.data) {
+                albumDetail.value = r.data;
+                playlistDetail.value = null;
+            } else {
+                showToast('加载专辑详情失败', 'error');
+            }
+        }
+
+        // ====== 下载 ======
+        async function downloadSingle(id) {
+            const r = await api('/v2/single?id=' + id);
+            if (r && r.code === '000000') { showToast('单曲下载任务已提交', 'success'); }
+            else { showToast('下载提交失败', 'error'); }
+        }
+
+        async function downloadAlbum(id) {
+            const r = await api('/v2/album?id=' + id);
+            if (r && r.code === '000000') { showToast('专辑下载任务已提交', 'success'); }
+            else { showToast('下载提交失败', 'error'); }
+        }
+
+        async function downloadPlaylist(id) {
+            const r = await api('/v2/playlist?id=' + id);
+            if (r && r.code === '000000') { showToast('歌单下载任务已提交', 'success'); }
+            else { showToast('下载提交失败', 'error'); }
+        }
+
+        async function viewPlaylist(id) {
+            const r = await api('/Playlist?id=' + id);
+            if (r && r.code === '000000' && r.data) {
+                playlistDetail.value = r.data;
+                albumDetail.value = null;
+            } else {
+                showToast('加载歌单详情失败', 'error');
+            }
+        }
+
+        // ====== 我的歌单 ======
+        const myPlaylists = ref([]);
+        const myListPage = ref(1);
+        const myListLimit = ref(20);
+        const myListLoading = ref(false);
+        const playlistDetail = ref(null);
+
+        async function loadMyPlaylists() {
+            if (!loginStatus.value) { myPlaylists.value = []; return; }
+            myListLoading.value = true;
+            const offset = (myListPage.value - 1) * myListLimit.value;
+            const r = await api(`/MyPlaylist?limit=${myListLimit.value}&offset=${offset}`);
+            if (r && r.code === '000000' && r.data) {
+                myPlaylists.value = r.data.playlists || [];
+            } else {
+                myPlaylists.value = [];
+            }
+            myListLoading.value = false;
+        }
+
+        // ====== 下载队列 ======
+        const queueTasks = ref([]);
+        const queueWaiting = ref(0);
+        const stats = reactive({ total: 0, downloading: 0, completed: 0, failed: 0, waiting: 0 });
+        let queueTimer = null;
+
+        async function loadQueue() {
+            const r = await api('/v2/queue?limit=100');
+            if (r && r.code === '000000') queueTasks.value = r.data || [];
+            const c = await api('/v2/queue/count');
+            if (c && c.code === '000000') queueWaiting.value = c.data.waiting || 0;
+            loadStats();
+        }
+
+        async function loadStats() {
+            const s = await api('/v2/queue/stats');
+            if (s && s.code === '000000') {
+                Object.assign(stats, s.data);
+            }
+        }
+
+        function progressPct(task) {
+            if (!task.totalSize || task.totalSize <= 0) return 0;
+            return Math.min(100, Math.round(task.bytesDownloaded * 100 / task.totalSize));
+        }
+
+        function formatSize(bytes) {
+            if (!bytes || bytes <= 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            let size = bytes;
+            while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+            return size.toFixed(1) + ' ' + units[i];
+        }
+
+        function formatSpeed(bytesPerSec) {
+            if (!bytesPerSec || bytesPerSec <= 0) return '0 B/s';
+            return formatSize(bytesPerSec) + '/s';
+        }
+
+        function formatEta(seconds) {
+            if (!seconds || seconds <= 0) return '';
+            if (seconds < 60) return Math.round(seconds) + '秒';
+            if (seconds < 3600) return Math.floor(seconds / 60) + '分' + Math.round(seconds % 60) + '秒';
+            return Math.floor(seconds / 3600) + '时' + Math.floor((seconds % 3600) / 60) + '分';
+        }
+
+        async function clearFinishedTasks() {
+            const r = await api('/v2/queue/clear', { method: 'POST' });
+            if (r && r.code === '000000') {
+                showToast('已清理 ' + (r.data.cleared || 0) + ' 个任务', 'success');
+                loadQueue();
+            }
+        }
+
+        async function clearAllTasks() {
+            if (!confirm('确定要清空所有下载任务吗？')) return;
+            const r = await api('/v2/queue/clearAll', { method: 'POST' });
+            if (r && r.code === '000000') {
+                showToast('已清空 ' + (r.data.cleared || 0) + ' 个任务', 'success');
+                loadQueue();
+            }
+        }
+
+        function statusText(s) {
+            return { WAITING:'等待中', DOWNLOADING:'下载中', COMPLETED:'已完成', FAILED:'失败' }[s] || s;
+        }
+
+        watch(activeTab, (v) => {
+            if (v === 'queue') {
+                loadQueue();
+                if (!queueTimer) queueTimer = setInterval(loadQueue, 2000);
+            } else {
+                if (queueTimer) { clearInterval(queueTimer); queueTimer = null; }
+            }
+        });
+
+        // ====== 登出 ======
+        async function logout() {
+            const r = await api('/v2/logout', { method: 'POST' });
+            if (r && r.code === '000000') {
+                loginStatus.value = false;
+                showQr.value = false;
+                showToast('已退出登录', 'success');
+            }
+        }
+
+        // ====== 设置 ======
+        const qualityLevel = ref('lossless');
+        const repeatEnabled = ref(true);
+        const playlistAsAlbum = ref(false);
+        const downloadPath = ref('');
+
+        async function loadSettings() {
+            const q = await api('/v2/quality');
+            if (q && q.code === '000000') qualityLevel.value = q.data;
+            const rp = await api('/v2/getRepeat');
+            if (rp && rp.code === '000000') repeatEnabled.value = rp.data;
+            const pa = await api('/v2/playlistAsAlbum');
+            if (pa && pa.code === '000000') playlistAsAlbum.value = pa.data === true;
+            const p = await api('/v2/path');
+            if (p && p.code === '000000') downloadPath.value = p.data;
+        }
+
+        async function setQuality() {
+            await fetch('/v2/quality', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'level='+qualityLevel.value });
+            showToast('音质已更新: ' + qualityLevel.value, 'success');
+        }
+
+        async function setRepeat() {
+            await api('/v2/setRepeat?repeat=' + repeatEnabled.value);
+            showToast('重复下载: ' + (repeatEnabled.value ? '开启' : '关闭'), 'success');
+        }
+
+        async function setPlaylistAsAlbum() {
+            await fetch('/v2/playlistAsAlbum', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'enabled='+playlistAsAlbum.value });
+            showToast('歌单信息写入专辑标签: ' + (playlistAsAlbum.value ? '开启' : '关闭'), 'success');
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+
+        onMounted(() => {
+            checkLoginStatus();
+            loadSettings();
+        });
+
+        return {
+            activeTab, loginStatus, toast, showToast,
+            searchType, searchKeyword, searchResults, searchPage, searchLimit, searchLoading, searched,
+            doSearch, viewAlbum, viewPlaylist, albumDetail, playlistDetail,
+            downloadSingle, downloadAlbum, downloadPlaylist,
+            myPlaylists, myListPage, myListLimit, myListLoading, loadMyPlaylists,
+            queueTasks, queueWaiting, stats, loadQueue, loadStats, clearFinishedTasks, clearAllTasks, statusText,
+            progressPct, formatSize, formatSpeed, formatEta,
+            qualityLevel, repeatEnabled, playlistAsAlbum, downloadPath, setQuality, setRepeat, setPlaylistAsAlbum,
+            showQr, qrImage, qrStatusText, startQrLogin, logout, formatDate
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

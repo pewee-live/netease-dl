@@ -14,8 +14,7 @@ import com.pewee.neteasemusic.service.MusicDownloadService;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 基于https://github.com/Suxiaoqinx/Netease_url api的接口,通过http api的方式调用python项目
- * 需要先启动python项目后才可以调用
+ * V1接口 - 现已统一使用V2的下载逻辑
  * @author pewee
  *
  */
@@ -29,20 +28,19 @@ public class MusicDownloadControllerV1 {
 	
 	@GetMapping("/single")
 	public RespEntity<String> downloadSingle(@RequestParam(value = "id") Long id) {
-		musicService.downloadSingleSong(id);
+		musicService.downloadSingleSongV2(id);
 		return RespEntity.apply(CommonRespInfo.SUCCESS,"OK");
 	}
 	
 	@GetMapping("/playlist")
 	public RespEntity<String> downloadPlaylist(@RequestParam(value = "id") Long id) {
-		musicService.downloadPlaylist(id);
+		musicService.downloadPlaylistV2(id);
 		return RespEntity.apply(CommonRespInfo.SUCCESS,"OK");
 	}
 	
-	
 	@GetMapping("/album")
 	public RespEntity<String> downloadAlbum(@RequestParam(value = "id") Long id) {
-		musicService.downloadAlbum(id);
+		musicService.downloadAlbumV2(id);
 		return RespEntity.apply(CommonRespInfo.SUCCESS,"OK");
 	}
 }
